@@ -123,12 +123,57 @@
 
         #preview-info {
             width: 100%;
-            text-align: center;
             background: #1e1e1e;
-            padding: 15px;
+            padding: 20px 0;
             border-top: 1px solid #333;
             flex-shrink: 0;
-            /* Keep size constant */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .meta-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #2b2b2b;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85em;
+            color: #ccc;
+            border: 1px solid #3a3a3a;
+            display: flex;
+            align-items: center;
+        }
+
+        .badge.highlight {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            background: rgba(187, 134, 252, 0.1);
+        }
+
+        .badge.page-info {
+            background: #1a3a4a;
+            border-color: #2a5a6a;
+            color: #8cd;
+        }
+
+        #preview-filename {
+            font-size: 1.1em;
+            margin: 0;
+            color: #fff;
+            opacity: 0.9;
+            font-weight: 500;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* Status Bar */
@@ -248,11 +293,11 @@
                 </div>
                 <!-- Info Below -->
                 <div id="preview-info">
-                    <h3 id="preview-filename" style="margin:0 0 5px 0;">Filename.mp4</h3>
-                    <div style="display:flex; justify-content:center; gap: 20px; color: #888; font-family:monospace;">
-                        <span id="preview-page-index">Page: 1 / 20</span>
-                        <span id="preview-global-index">Total: 57 / 412</span>
-                        <span id="preview-mute-status"></span>
+                    <div id="preview-filename">Filename</div>
+                    <div class="meta-badges">
+                        <span class="badge page-info" id="preview-page-info">Page 1</span>
+                        <span class="badge" id="preview-global-index">#1</span>
+                        <span class="badge highlight" id="preview-mute-status" style="display:none">🔇 Muted</span>
                     </div>
                 </div>
             </div>
@@ -288,9 +333,6 @@
             previewView: document.getElementById('preview-view'),
             mediaContainer: document.getElementById('media-container'),
             previewFilename: document.getElementById('preview-filename'),
-            previewPageIndex: document.getElementById('preview-page-index'),
-            previewGlobalIndex: document.getElementById('preview-global-index'),
-            previewMuteStatus: document.getElementById('preview-mute-status'),
             pageIndicator: document.getElementById('page-indicator'),
             statusLeft: document.getElementById('status-left'),
             statusRight: document.getElementById('status-right'),
@@ -480,12 +522,19 @@
             const pageStart = state.currentPage * state.pageSize;
             const indexInPage = (state.selectedIndex - pageStart) + 1;
             const itemsOnPage = Math.min(state.pageSize, state.files.length - pageStart); // Approximate for last page
+            const totalPages = Math.ceil(state.files.length / state.pageSize) || 1;
 
             // Update Info
             el.previewFilename.textContent = filename;
-            el.previewPageIndex.textContent = `Page Item: ${indexInPage} / ${itemsOnPage}`; // "Current pagination filename" logic
-            el.previewGlobalIndex.textContent = `Total: ${state.selectedIndex + 1} / ${state.files.length}`;
-            el.previewMuteStatus.textContent = state.isMuted ? "🔇 Muted" : "";
+
+            // Update Badges via DOM lookups
+            const pPageInfo = document.getElementById('preview-page-info');
+            const pGlobal = document.getElementById('preview-global-index');
+            const pMute = document.getElementById('preview-mute-status');
+
+            if (pPageInfo) pPageInfo.textContent = `Page ${state.currentPage + 1}/${totalPages} • Item ${indexInPage}/${itemsOnPage}`;
+            if (pGlobal) pGlobal.textContent = `#${state.selectedIndex + 1} of ${state.files.length}`;
+            if (pMute) pMute.style.display = state.isMuted ? 'flex' : 'none';
 
             // Update Media
             el.mediaContainer.innerHTML = '';
@@ -576,7 +625,10 @@
                 state.isMuted = !state.isMuted;
                 const video = el.mediaContainer.querySelector('video');
                 if (video) video.muted = state.isMuted;
-                el.previewMuteStatus.textContent = state.isMuted ? "🔇 Muted" : "";
+                // Update badge if in preview
+                const pMute = document.getElementById('preview-mute-status');
+                if (pMute) pMute.style.display = state.isMuted ? 'flex' : 'none';
+
                 showToast(state.isMuted ? "Muted" : "Unmuted");
             }
 

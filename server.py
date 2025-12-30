@@ -36,44 +36,75 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
             files = []
             for item in root.iterdir():
                 if item.is_file() and item.suffix.lower() in MEDIA_EXT:
-                    # Ignore hidden files
-                    if item.name.startswith('.'):
-                        continue
+                    if item.name.startswith('.'): continue
                     files.append(item.name)
             
-            # Sort files naturally-ish (by name)
             files.sort()
 
-            # Scan directories for shortcuts
+            # Scan directories
             dirs = []
-            known_shortcuts = set()
+            raw_dirs = []
             
             for item in root.iterdir():
                 if item.is_dir():
                     name = item.name
-                    # Ignore hidden dirs or specific system dirs if needed
                     if name.startswith('.') or name in {'trash', 'deleteVideos', '.git'}:
                         continue
-                        
-                    # Assign shortcut
-                    shortcut = None
-                    # Try first letter
-                    first = name[0].upper()
-                    if first.isalpha() and first not in known_shortcuts:
-                        shortcut = first
-                    
-                    # If first letter taken, just leave it blank (or could be smarter, but spec says "A unique underlined letter")
-                    # For simplicity, if collision, we might skip shortcut or simple first-come-first-serve
-                    if shortcut:
-                        known_shortcuts.add(shortcut)
-                    
-                    dirs.append({
-                        "name": name,
-                        "shortcut": shortcut
-                    })
+                    raw_dirs.append(name)
             
             # Sort directories by name
-            dirs.sort(key=lambda x: x['name'])
+            raw_dirs.sort()
+
+            # Assign shortcuts
+            import random
+            import string
+            
+            used_shortcuts = set()
+            assignments = {} # name -> shortcut
+            
+            # 1. Preferred: First Letter
+            unassigned = []
+            for name in raw_dirs:
+                first = name[0].upper()
+                if first.isalpha() and first not in used_shortcuts:
+                    assignments[name] = first
+                    used_shortcuts.add(first)
+                else:
+                    unassigned.append(name)
+            
+            # 2. Fallback: Random Available Letter for unassigned
+            available_letters = [c for c in string.ascii_uppercase if c not in used_shortcuts]
+            
+            still_unassigned = []
+            for name in unassigned:
+                if available_letters:
+                    # Pick random
+                    param = random.choice(available_letters)
+                    assignments[name] = param
+                    used_shortcuts.add(param)
+                    available_letters.remove(param)
+                else:
+                    still_unassigned.append(name)
+
+            # 3. Fallback: Numbers 0-9 if all letters taken
+            available_numbers = [str(d) for d in range(10) if str(d) not in used_shortcuts]
+            
+            for name in still_unassigned:
+                if available_numbers:
+                    param = random.choice(available_numbers)
+                    assignments[name] = param
+                    used_shortcuts.add(param)
+                    available_numbers.remove(param)
+                else:
+                    # No shortcut available
+                    assignments[name] = None
+
+            # Build result list
+            for name in raw_dirs:
+                dirs.append({
+                    "name": name,
+                    "shortcut": assignments.get(name)
+                })
 
             self.send_json({"files": files, "dirs": dirs})
 
