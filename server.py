@@ -129,7 +129,8 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             src = Path(DIRECTORY) / filename
             dst_dir = Path(DIRECTORY) / target_dir
-            dst = dst_dir / filename
+            # IMPORTANT: Use .name to ensure we don't accidentally nest paths if filename has a folder
+            dst = dst_dir / Path(filename).name
 
             if not src.exists():
                 self.send_error(404, "File not found")
@@ -161,7 +162,8 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             src = Path(DIRECTORY) / filename
             trash_dir = Path(DIRECTORY) / "trash"
-            dst = trash_dir / filename
+            # Use .name for safety
+            dst = trash_dir / Path(filename).name
 
             if not src.exists():
                 self.send_error(404, "File not found")
@@ -191,8 +193,9 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode('utf-8'))
 
     def validate_filename(self, name):
-        if '/' in name or '\\' in name or '..' in name:
-            self.send_error(403, "Invalid filename")
+        # Allow / and \ for subdirectories (needed for undo), but ABSOLUTELY NO ..
+        if '..' in name:
+            self.send_error(403, "Invalid filename (traversal detected)")
             return False
         return True
 
