@@ -19,7 +19,7 @@ def get_video_files(directory: Path) -> list:
         if file.is_file() and file.suffix.lower() in video_extensions:
             videos.append(file)
     
-    return sorted(videos, key=lambda x: x.name.lower())
+    return sorted(videos, key=lambda x: x.stat().st_mtime, reverse=True)
 
 def generate_html(videos: list, output_path: Path) -> str:
     """Generate HTML gallery with client-side pagination to handle thousands of files."""
@@ -181,6 +181,9 @@ def generate_html(videos: list, output_path: Path) -> str:
             background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }}
         
         .video-card:hover .video-overlay {{
@@ -195,6 +198,30 @@ def generate_html(videos: list, output_path: Path) -> str:
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            max-width: 80%;
+        }}
+
+        .delete-btn {{
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            margin-left: 10px;
+        }}
+
+        .delete-btn:hover {{
+            background: #ff4444;
+            color: white;
+            border-color: #ff4444;
+            transform: scale(1.1);
         }}
 
         .error-message {{
@@ -251,12 +278,12 @@ def generate_html(videos: list, output_path: Path) -> str:
     
     <script>
         // Data injected from Python
-        const videoList = {video_list_js};
+        let videoList = {video_list_js};
         
         // Configuration
         const ITEMS_PER_PAGE = 50; // Keep DOM light
         let currentPage = 1;
-        const totalPages = Math.ceil(videoList.length / ITEMS_PER_PAGE);
+        let totalPages = Math.ceil(videoList.length / ITEMS_PER_PAGE);
 
         // Elements
         const grid = document.getElementById('gallery-grid');
@@ -287,22 +314,77 @@ def generate_html(videos: list, output_path: Path) -> str:
             }});
         }}, observerOptions);
 
+        async function deleteVideo(filename, cardElement, event) {{
+            // Prevent clicking the link
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (!confirm(`Are you sure you want to PERMANENTLY delete "${{filename}}"?`)) {{
+                return;
+            }}
+
+            try {{
+                const btn = cardElement.querySelector('.delete-btn');
+                btn.innerHTML = '⏳';
+                
+                const response = await fetch('/api/delete', {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    body: JSON.stringify({{ filename: filename }})
+                }});
+
+                if (response.ok) {{
+                    // Remove from UI
+                    cardElement.style.transition = 'all 0.5s';
+                    cardElement.style.transform = 'scale(0)';
+                    setTimeout(() => cardElement.remove(), 500);
+                    
+                    // Remove from list
+                    const index = videoList.indexOf(filename);
+                    if (index > -1) {{
+                        videoList.splice(index, 1);
+                    }}
+                    
+                    // Update header count if we wanted to (optional)
+                    
+                }} else {{
+                    const err = await response.text();
+                    alert(`Error deleting file: ${{err}}`);
+                    btn.innerHTML = '🗑️';
+                }}
+            }} catch (error) {{
+                console.error(error);
+                alert('Network error deleting file');
+            }}
+        }}
+
         function renderPage(page) {{
+            // Recalculate total pages in case items deleted
+            totalPages = Math.ceil(videoList.length / ITEMS_PER_PAGE);
+            
             // Clamp page
             if (page < 1) page = 1;
-            if (page > totalPages) page = totalPages;
+            if (page > totalPages && totalPages > 0) page = totalPages;
+            if (totalPages === 0) page = 1;
             currentPage = page;
 
             // Update UI
             pageInput.value = page;
-            totalPagesSpan.textContent = totalPages;
+            totalPagesSpan.textContent = totalPages || 1;
             btnPrev.disabled = page === 1;
             btnFirst.disabled = page === 1;
-            btnNext.disabled = page === totalPages;
-            btnLast.disabled = page === totalPages;
+            btnNext.disabled = page === totalPages || totalPages === 0;
+            btnLast.disabled = page === totalPages || totalPages === 0;
 
             // Clear Grid
             grid.innerHTML = '';
+            
+            if (videoList.length === 0) {{
+                grid.innerHTML = '<div style="color: #666; text-align: center; grid-column: 1/-1; padding: 50px;">No videos found</div>';
+                return;
+            }}
             
             // Slice Data
             const start = (page - 1) * ITEMS_PER_PAGE;
@@ -334,6 +416,7 @@ def generate_html(videos: list, output_path: Path) -> str:
                     ></video>
                     <div class="video-overlay">
                         <span class="video-name">${{videoName}}</span>
+                        <button class="delete-btn" title="Delete Video" onclick="deleteVideo('${{filename.replace(/'/g, "\\'")}}', this.closest('.video-card'), event)">🗑️</button>
                     </div>
                     <div class="error-message">Failed to load</div>
                 `;
