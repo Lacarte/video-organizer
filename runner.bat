@@ -77,9 +77,24 @@ REM Commented out gallery update (as in original)
 echo Updating gallery...
 :: python video_gallery.py
 
-echo Starting local server...
-start "" "http://localhost:8001/video-organizer.html"
-python "%SCRIPT_DIR%server.py"
+echo CHECKING IF PORT 8001 IS OPEN...
+netstat -ano | find "8001" >nul
+if %errorlevel% equ 0 (
+    echo.
+    echo ========================================================
+    echo  SERVER IS ALREADY RUNNING!
+    echo ========================================================
+    echo.
+    echo Please open your browser to:
+    echo http://localhost:8001/video-organizer.html
+    echo.
+    echo Press any key to exit...
+    pause >nul
+) else (
+    echo Starting local server...
+    start "" "http://localhost:8001/video-organizer.html"
+    python "%SCRIPT_DIR%server.py"
+)
 
 REM ===================================
 REM Cleanup on Exit

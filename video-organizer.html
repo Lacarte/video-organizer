@@ -554,25 +554,91 @@
         /* Keyboard Hints Section */
         .keyboard-hints {
             margin-top: auto;
-            padding-top: 12px;
+            padding-top: 16px;
             font-size: 0.7rem;
             color: var(--text-muted);
             border-top: 1px solid var(--border-subtle);
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            text-align: center;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .keyboard-hints p {
-            margin: 0;
-            white-space: nowrap;
+        .keyboard-hints-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.12s ease;
+            user-select: none;
         }
 
-        .keyboard-hints strong {
+        .keyboard-hints-header:hover {
+            background: var(--bg-elevated);
+        }
+
+        .keyboard-hints-title {
+            font-size: 0.75rem;
+            font-weight: 600;
             color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .keyboard-hints-toggle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: transform 0.12s ease;
+        }
+
+        .keyboard-hints-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .keyboard-hints-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.2s ease, opacity 0.2s ease;
+        }
+
+        .keyboard-hints-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .keyboard-hint-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: background 0.12s ease;
+        }
+
+        .keyboard-hint-row:hover {
+            background: var(--bg-elevated);
+        }
+
+        .keyboard-hint-key {
+            color: var(--accent-primary);
             font-weight: 500;
+            font-family: 'Courier New', monospace;
+            min-width: 75px;
+            text-align: left;
+        }
+
+        .keyboard-hint-separator {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .keyboard-hint-desc {
+            color: var(--text-secondary);
+            flex: 1;
         }
     </style>
 </head>
@@ -599,13 +665,57 @@
             </div>
 
             <div class="keyboard-hints">
-                <p><strong>Keyboard</strong></p>
-                <p>Enter → Preview</p>
-                <p>Arrows → Navigate</p>
-                <p>PgUp/Dn → Pages</p>
-                <p>Del → Trash</p>
-                <p>A-Z → Move</p>
-                <p>. → Mute</p>
+                <div class="keyboard-hints-header" onclick="toggleKeyboardHints()">
+                    <div class="keyboard-hints-title">Keyboard Shortcuts</div>
+                    <span class="keyboard-hints-toggle">▼</span>
+                </div>
+                <div class="keyboard-hints-content" id="keyboard-hints-content">
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">Enter</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Preview</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">Esc</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Exit Preview</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">← →</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Navigate Files</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">↑ ↓</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Seek ±10s</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">PgUp/PgDn</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Pages</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">Del</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Delete</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">A-Z</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Move to Folder</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">.</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Toggle Mute</span>
+                    </div>
+                    <div class="keyboard-hint-row">
+                        <span class="keyboard-hint-key">Ctrl+Z</span>
+                        <span class="keyboard-hint-separator">→</span>
+                        <span class="keyboard-hint-desc">Undo</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -614,9 +724,12 @@
 
             <!-- Grid View (Default) -->
             <div id="grid-view">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 12px;">
                     <span id="page-indicator">Page 1</span>
-                    <span class="meta-info">Press <strong style="color: var(--accent-cyan);">Enter</strong> to
+                    <span id="cwd-display" class="meta-info"
+                        style="font-family: monospace; opacity: 0.7; font-size: 0.75rem;"></span>
+                    <span class="meta-info">Press <strong style="color: var(--accent-primary);">Enter</strong> to
                         preview</span>
                 </div>
                 <div id="file-grid" class="file-grid">
@@ -681,6 +794,14 @@
             statusRight: document.getElementById('status-right'),
             toast: document.getElementById('toast')
         };
+
+        // Keyboard Shortcuts Toggle
+        function toggleKeyboardHints() {
+            const content = document.getElementById('keyboard-hints-content');
+            const toggle = document.querySelector('.keyboard-hints-toggle');
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
 
         // Initialization
         async function init() {
@@ -863,7 +984,9 @@
             }
         }
 
-        async function previewHistoryFile(fullPath) {
+        async function previewHistoryFile(index) {
+            const item = state.history[index];
+            const fullPath = item.to === '.' ? item.filename : `${item.to}/${item.filename}`;
             // Just show the preview for a file, even if not in list.
             state.inPreview = true;
 
@@ -872,18 +995,7 @@
             const ext = fullPath.split('.').pop().toLowerCase();
             const isVideo = ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext);
 
-            let mediaEl;
-            if (isVideo) {
-                mediaEl = document.createElement('video');
-                mediaEl.controls = true;
-                mediaEl.autoplay = true;
-                mediaEl.muted = state.isMuted;
-                mediaEl.loop = true;
-                mediaEl.src = fullPath; // Browser resolves relative URL
-            } else {
-                mediaEl = document.createElement('img');
-                mediaEl.src = fullPath;
-            }
+            const mediaEl = createMediaElement(fullPath, isVideo);
             el.mediaContainer.appendChild(mediaEl);
 
             // Hijack info
@@ -892,10 +1004,12 @@
             el.gridView.classList.add('hidden');
 
             const pFilename = document.getElementById('preview-filename');
+            const pPath = document.getElementById('preview-path');
             const pPage = document.getElementById('preview-page-info');
             const pGlobal = document.getElementById('preview-global-index');
 
-            pFilename.textContent = `[History] ${fullPath}`;
+            pFilename.textContent = `[History] ${item.filename}`; // Just filename
+            if (pPath) pPath.textContent = fullPath; // Full path here
             if (pPage) pPage.textContent = "History Preview";
             if (pGlobal) pGlobal.textContent = "-";
         }
@@ -937,7 +1051,7 @@
                         </span>
                         <span class="undo-icon" onclick="undoHistoryItem(${realIndex})" title="Undo this action">↩️</span>
                     </div>
-                    <a href="#" class="history-link" onclick="previewHistoryFile('${fullPath}'); return false;">
+                    <a href="#" class="history-link" onclick="previewHistoryFile(${realIndex}); return false;">
                         ${item.filename}
                     </a>
                 </li>
@@ -972,6 +1086,12 @@
             const pageFiles = state.files.slice(start, end);
 
             el.pageIndicator.textContent = `Page ${state.currentPage + 1} / ${Math.ceil(state.files.length / state.pageSize) || 1}`;
+
+            // Update current working directory display
+            const cwdDisplay = document.getElementById('cwd-display');
+            if (cwdDisplay && state.cwd) {
+                cwdDisplay.textContent = `📁 ${state.cwd}`;
+            }
 
             el.fileGrid.innerHTML = pageFiles.map((f, i) => {
                 const globalIndex = start + i;
@@ -1040,7 +1160,11 @@
 
             // Update Media
             el.mediaContainer.innerHTML = '';
+            const mediaEl = createMediaElement(filename, isVideo);
+            el.mediaContainer.appendChild(mediaEl);
+        }
 
+        function createMediaElement(src, isVideo) {
             let mediaEl;
             if (isVideo) {
                 mediaEl = document.createElement('video');
@@ -1048,16 +1172,17 @@
                 mediaEl.autoplay = true;
                 mediaEl.muted = state.isMuted;
                 mediaEl.loop = true;
-                mediaEl.src = filename;
+                mediaEl.preload = "metadata"; // Ensure metadata loads
+                mediaEl.src = src;
                 mediaEl.style.width = "100%";
                 mediaEl.style.height = "100%";
-                mediaEl.style.pointerEvents = "auto"; // Fix for timeline clicking
+                mediaEl.style.pointerEvents = "auto";
                 mediaEl.style.zIndex = "10";
             } else {
                 mediaEl = document.createElement('img');
-                mediaEl.src = filename;
+                mediaEl.src = src;
             }
-            el.mediaContainer.appendChild(mediaEl);
+            return mediaEl;
         }
 
         function renderStatus() {
@@ -1090,18 +1215,79 @@
                 return;
             }
 
-            // Navigation
+            // Navigation (Left/Right arrows)
             if (key === 'ArrowRight') {
+                e.preventDefault();
                 if (state.selectedIndex < state.files.length - 1) {
                     state.selectedIndex++;
                     render();
                 }
             } else if (key === 'ArrowLeft') {
+                e.preventDefault();
                 if (state.selectedIndex > 0) {
                     state.selectedIndex--;
                     render();
                 }
-            } else if (key === 'PageDown') {
+            }
+
+            // Video seek controls (Up/Down arrows) - only in preview mode
+            else if (key === 'ArrowUp' && state.inPreview) {
+                e.preventDefault();
+                const video = el.mediaContainer.querySelector('video');
+
+                if (!video) return;
+
+                // Allow seek if just loaded or playing.
+                // If duration is valid, we proceed.
+                if (isFinite(video.duration) && video.duration > 0) {
+                    try {
+                        const cur = video.currentTime; // This IS the calculation source
+                        const step = 10;
+                        const buffer = 2.0;
+                        const maxTime = Math.max(0, video.duration - buffer);
+                        const dur = video.duration.toFixed(1);
+
+                        if (cur >= maxTime) {
+                            showToast(`End reached (${cur.toFixed(1)}s / ${dur}s)`, true);
+                            return;
+                        }
+
+                        let dest = cur + step;
+                        if (dest >= maxTime) dest = maxTime;
+
+                        video.currentTime = dest;
+                        video.play().catch(() => { }); // Force play
+
+                        // Debug: Show where we are seeking from -> to
+                        const name = el.previewFilename.textContent; // Show name to prove it's this video
+                        showToast(`Seek (${name}): ${cur.toFixed(1)}s ➡ ${dest.toFixed(1)}s`);
+                    } catch (e) {
+                        console.error('Seek error:', e);
+                    }
+                } else {
+                    showToast("Video loading...", true);
+                }
+            } else if (key === 'ArrowDown' && state.inPreview) {
+                e.preventDefault();
+                const video = el.mediaContainer.querySelector('video');
+                if (video && isFinite(video.duration) && video.duration > 0) {
+                    try {
+                        const cur = video.currentTime;
+                        const dur = video.duration.toFixed(1);
+                        let dest = cur - 10;
+                        if (dest < 0) dest = 0;
+                        video.currentTime = dest;
+                        video.play().catch(() => { });
+
+                        const name = el.previewFilename.textContent;
+                        showToast(`Seek (${name}): ${cur.toFixed(1)}s ➡ ${dest.toFixed(1)}s`);
+                    } catch (e) {
+                        console.error('Seek error:', e);
+                    }
+                }
+            }
+
+            else if (key === 'PageDown') {
                 const nextIdx = state.selectedIndex + state.pageSize;
                 if (nextIdx < state.files.length) {
                     state.selectedIndex = nextIdx;

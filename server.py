@@ -6,6 +6,7 @@ import json
 import urllib.parse
 import subprocess
 import hashlib
+import re
 from pathlib import Path
 
 # Config
@@ -18,7 +19,104 @@ VIDEO_EXT = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
 IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 MEDIA_EXT = VIDEO_EXT | IMAGE_EXT
 
-class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
+class RangeHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """
+    Adds support for HTTP 'Range' requests to SimpleHTTPRequestHandler.
+    Allows seeking in video files.
+    """
+    def send_head(self):
+        if 'Range' not in self.headers:
+            self.range = None
+            return super().send_head()
+        
+        try:
+            self.range = re.search(r'bytes=(\d+)-(\d*)', self.headers['Range'])
+        except ValueError:
+            self.range = None
+            return super().send_head()
+            
+        if not self.range:
+            return super().send_head()
+            
+        path = self.translate_path(self.path)
+        f = None
+        try:
+            f = open(path, 'rb')
+        except OSError:
+            self.send_error(404, "File not found")
+            return None
+
+        # Get file size
+        try:
+            fs = os.fstat(f.fileno())
+            file_len = fs[6]
+        except:
+            f.close()
+            return None
+
+        # Parse range
+        start, end = self.range.groups()
+        start = int(start)
+        if end:
+            end = int(end)
+        else:
+            end = file_len - 1
+            
+        # Validate
+        if start >= file_len:
+            self.send_error(416, "Requested Range Not Satisfiable")
+            self.send_header("Content-Range", f"bytes */{file_len}")
+            self.end_headers()
+            f.close()
+            return None
+
+        self.send_response(206)
+        self.send_header("Content-type", self.guess_type(path))
+        self.send_header("Content-Range", f"bytes {start}-{end}/{file_len}")
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        self.end_headers()
+        
+        # Position file
+        f.seek(start)
+        return f
+
+    def copyfile(self, source, outputfile):
+        """
+        Custom copyfile that respects self.range limits if present.
+        """
+        if not hasattr(self, 'range') or not self.range:
+            return super().copyfile(source, outputfile)
+            
+        # If range is present, we need to limit the read.
+        # But SimpleHTTPRequestHandler.copyfile does: shutil.copyfileobj(source, outputfile)
+        # We can't control it easily unless source is a wrapper.
+        # So we rely on send_head returning a LimitedFileWrapper.
+        super().copyfile(source, outputfile)
+
+class LimitedFileWrapper:
+    def __init__(self, f, length):
+        self.f = f
+        self.length = length
+        self.read_so_far = 0
+        
+    def read(self, size=-1):
+        if self.read_so_far >= self.length:
+            return b""
+            
+        if size < 0:
+            remaining = self.length - self.read_so_far
+            data = self.f.read(remaining)
+            self.read_so_far += len(data)
+            return data
+            
+        remaining = self.length - self.read_so_far
+        to_read = min(size, remaining)
+        data = self.f.read(to_read)
+        self.read_so_far += len(data)
+        return data
+
+class GalleryRequestHandler(RangeHTTPRequestHandler):
     def do_POST(self):
         """Handle JSON API requests."""
         if self.path == '/api/list':
@@ -184,8 +282,6 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"❌ Error moving {filename}: {e}")
             self.send_error(500, str(e))
 
-
-
     def read_json(self):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
@@ -207,6 +303,24 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(403, "Invalid filename (traversal detected)")
             return False
         return True
+
+    def send_head(self):
+        f = super().send_head()
+        if f and hasattr(self, 'range') and self.range:
+             # Calculate length again to wrap it
+             try:
+                 start, end = self.range.groups()
+                 start = int(start)
+                 fs = os.fstat(f.fileno())
+                 file_len = fs[6]
+                 if end: end = int(end) 
+                 else: end = file_len - 1
+                 
+                 length = end - start + 1
+                 return LimitedFileWrapper(f, length)
+             except:
+                 pass
+        return f
 
     def do_GET(self):
         """Serve static files, mapping app route to the correct file."""
@@ -231,12 +345,13 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404, f"HTML file not found at {html_path}")
                 return
 
+        # Use RangeHTTPRequestHandler logic for files
         try:
             super().do_GET()
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass
         except Exception as e:
-            pass
+            print(f"Error serving file: {e}")
 
 class ThreadedHTTPServer(socketserver.ThreadingTCPServer):
     def service_actions(self):
