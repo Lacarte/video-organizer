@@ -11,6 +11,7 @@ from pathlib import Path
 # Config
 PORT = 8001
 DIRECTORY = "."  # Current directory (should be parent folder containing videos)
+SCRIPT_DIR = Path(__file__).parent.resolve()  # Directory where server.py is located
 
 # Extensions to look for
 VIDEO_EXT = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
@@ -210,10 +211,9 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         """Serve static files, mapping app route to the correct file."""
         if self.path == '/' or self.path == '/video-organizer.html':
-            # Serve the HTML file from the script directory
-            # We are running from parent, so file is in video-organizer/video-organizer.html
-            html_path = Path("video-organizer") / "video-organizer.html"
-            
+            # Serve the HTML file from the script directory (where server.py is located)
+            html_path = SCRIPT_DIR / "video-organizer.html"
+
             if html_path.exists():
                 try:
                     self.send_response(200)
@@ -224,9 +224,12 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 except Exception as e:
                     print(f"Error serving HTML: {e}")
+                    self.send_error(500, f"Error loading HTML: {e}")
+                    return
             else:
-                 # Fallback if structure is different
-                 pass
+                print(f"HTML file not found at: {html_path}")
+                self.send_error(404, f"HTML file not found at {html_path}")
+                return
 
         try:
             super().do_GET()
@@ -245,6 +248,7 @@ class ThreadedHTTPServer(socketserver.ThreadingTCPServer):
 if __name__ == "__main__":
     print(f"🚀 Video Organizer Server on port {PORT}")
     print(f"📂 Serving directory: {os.getcwd()}")
+    print(f"📄 HTML file location: {SCRIPT_DIR / 'video-organizer.html'}")
     with ThreadedHTTPServer(("", PORT), GalleryRequestHandler) as httpd:
         try:
             httpd.serve_forever()
