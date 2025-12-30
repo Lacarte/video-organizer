@@ -133,16 +133,16 @@
 
         .file-item {
             background: rgba(30, 40, 60, 0.3);
-            padding: 16px;
+            padding: 0;
             border-radius: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
             border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .file-item:hover {
@@ -156,6 +156,74 @@
             border: 2px solid var(--accent-cyan);
             box-shadow: var(--glow-cyan);
             transform: scale(1.02);
+        }
+
+        .file-thumbnail {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, rgba(10, 15, 25, 0.8), rgba(20, 25, 40, 0.6));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .file-thumbnail::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 102, 255, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .file-item:hover .file-thumbnail::before {
+            opacity: 1;
+        }
+
+        .file-thumbnail img,
+        .file-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+            box-shadow: none;
+        }
+
+        .file-item:hover .file-thumbnail img,
+        .file-item:hover .file-thumbnail video {
+            transform: scale(1.05);
+        }
+
+        .file-thumbnail .icon-fallback {
+            font-size: 3em;
+            opacity: 0.4;
+            filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+        }
+
+        .file-name {
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            opacity: 0.85;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+
+        .file-item.active .file-name {
+            background: rgba(0, 102, 255, 0.2);
+            opacity: 1;
+            color: var(--accent-cyan);
         }
 
         /* Preview Mode */
@@ -998,12 +1066,34 @@
                 const isSelected = globalIndex === state.selectedIndex;
                 const ext = f.split('.').pop().toLowerCase();
                 const isVideo = ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext);
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
                 const icon = isVideo ? '🎬' : '🖼️';
+
+                let thumbnailContent = '';
+                if (isVideo) {
+                    // For videos, create a video element with poster/thumbnail
+                    thumbnailContent = `
+                        <video
+                            src="${f}#t=0.1"
+                            preload="metadata"
+                            muted
+                            style="pointer-events: none;"
+                        ></video>
+                    `;
+                } else if (isImage) {
+                    // For images, show the image directly
+                    thumbnailContent = `<img src="${f}" alt="${f}" loading="lazy">`;
+                } else {
+                    // Fallback for unknown file types
+                    thumbnailContent = `<div class="icon-fallback">${icon}</div>`;
+                }
 
                 return `
                     <div class="file-item ${isSelected ? 'active slide-in' : ''}" onclick="selectItem(${globalIndex})" style="animation-delay: ${i * 0.02}s">
-                        <div style="font-size: 2.5em; margin-bottom: 8px; opacity: 0.9;">${icon}</div>
-                        <div style="font-size: 0.75rem; margin-top: 4px; line-height: 1.3; opacity: 0.85;">${f}</div>
+                        <div class="file-thumbnail">
+                            ${thumbnailContent}
+                        </div>
+                        <div class="file-name">${f}</div>
                     </div>
                 `;
             }).join('');
