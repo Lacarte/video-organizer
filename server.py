@@ -4,6 +4,8 @@ import socketserver
 import os
 import json
 import urllib.parse
+import subprocess
+import hashlib
 from pathlib import Path
 
 # Config
@@ -106,7 +108,11 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
                     "shortcut": assignments.get(name)
                 })
 
-            self.send_json({"files": files, "dirs": dirs})
+            self.send_json({
+                "files": files, 
+                "dirs": dirs,
+                "cwd": str(Path(DIRECTORY).resolve())
+            })
 
         except Exception as e:
             self.send_error(500, str(e))
@@ -177,6 +183,8 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"❌ Error moving {filename}: {e}")
             self.send_error(500, str(e))
 
+
+
     def read_json(self):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
@@ -205,6 +213,7 @@ class GalleryRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Serve the HTML file from the script directory
             # We are running from parent, so file is in video-organizer/video-organizer.html
             html_path = Path("video-organizer") / "video-organizer.html"
+            
             if html_path.exists():
                 try:
                     self.send_response(200)

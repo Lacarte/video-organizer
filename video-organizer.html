@@ -6,23 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Organizer</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
         :root {
-            --bg-gradient-start: #0a0e1a;
-            --bg-gradient-end: #1a1f35;
-            --text-primary: #e8edf5;
-            --text-secondary: #9ca8b8;
-            --accent-cyan: #00d4ff;
-            --accent-blue: #0066ff;
-            --accent-teal: #00ffaa;
-            --error: #ff4757;
-            --success: #00ffaa;
-            --glass-bg: rgba(20, 28, 45, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
-            --glow-blue: 0 0 30px rgba(0, 102, 255, 0.4);
+            --bg-base: #1a1d24;
+            --bg-panel: #23262f;
+            --bg-elevated: #2a2d37;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent-primary: #5b8db8;
+            --accent-confirm: #4b9f7f;
+            --accent-delete: #c85a5a;
+            --accent-highlight: #8b7bb8;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         * {
@@ -34,9 +32,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-            background-size: 200% 200%;
-            animation: gradient-shift 15s ease infinite;
+            background: var(--bg-base);
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             overflow: hidden;
@@ -47,23 +43,14 @@
             letter-spacing: -0.01em;
         }
 
-        @keyframes gradient-shift {
-            0%, 100% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-        }
-
         /* Layout */
         #app {
             display: flex;
             flex: 1;
             height: 100%;
             overflow: hidden;
-            padding: 20px;
-            gap: 20px;
+            padding: 0;
+            gap: 0;
         }
 
         #main-area {
@@ -71,22 +58,22 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            gap: 20px;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 32px;
         }
 
         #sidebar {
-            width: 340px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 24px;
+            width: 280px;
+            background: var(--bg-panel);
+            padding: 24px 20px;
             overflow-y: hidden;
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
-            box-shadow: var(--card-shadow);
-            gap: 20px;
+            gap: 24px;
         }
 
         /* Initial View (Grid) */
@@ -94,97 +81,73 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: var(--card-shadow);
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: var(--shadow-subtle);
             gap: 20px;
         }
 
         .file-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 16px;
+            gap: 12px;
             overflow-y: auto;
             flex: 1;
             padding-right: 8px;
         }
 
         .file-grid::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         .file-grid::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 4px;
+            background: transparent;
         }
 
         .file-grid::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
         }
 
         .file-grid::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 212, 255, 0.5);
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .file-item {
-            background: rgba(30, 40, 60, 0.3);
+            background: var(--bg-elevated);
             padding: 0;
-            border-radius: 12px;
+            border-radius: 6px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.12s ease;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
             position: relative;
             display: flex;
             flex-direction: column;
         }
 
         .file-item:hover {
-            background: rgba(40, 50, 75, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
+            background: #2e313c;
+            border-color: var(--accent-primary);
         }
 
         .file-item.active {
-            background: rgba(0, 102, 255, 0.15);
-            border: 2px solid var(--accent-cyan);
-            box-shadow: var(--glow-cyan);
-            transform: scale(1.02);
+            background: #2e313c;
+            border: 2px solid var(--accent-primary);
         }
 
         .file-thumbnail {
             width: 100%;
             height: 140px;
-            background: linear-gradient(135deg, rgba(10, 15, 25, 0.8), rgba(20, 25, 40, 0.6));
+            background: var(--bg-base);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .file-thumbnail::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 102, 255, 0.05));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-
-        .file-item:hover .file-thumbnail::before {
-            opacity: 1;
+            border-radius: 6px 6px 0 0;
         }
 
         .file-thumbnail img,
@@ -192,38 +155,30 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.3s ease;
+            transition: none;
             box-shadow: none;
-        }
-
-        .file-item:hover .file-thumbnail img,
-        .file-item:hover .file-thumbnail video {
-            transform: scale(1.05);
         }
 
         .file-thumbnail .icon-fallback {
             font-size: 3em;
-            opacity: 0.4;
-            filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+            opacity: 0.3;
         }
 
         .file-name {
             padding: 10px 12px;
             font-size: 0.75rem;
             line-height: 1.3;
-            opacity: 0.85;
+            color: var(--text-secondary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
+            background: transparent;
+            transition: color 0.12s ease;
         }
 
         .file-item.active .file-name {
-            background: rgba(0, 102, 255, 0.2);
-            opacity: 1;
-            color: var(--accent-cyan);
+            color: var(--accent-primary);
+            font-weight: 500;
         }
 
         /* Preview Mode */
@@ -246,13 +201,10 @@
             width: 100%;
             overflow: hidden;
             min-height: 0;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
+            background: var(--bg-base);
+            border-radius: 6px;
             padding: 32px;
-            box-shadow: var(--card-shadow), var(--glow-blue);
+            box-shadow: var(--shadow-subtle);
         }
 
         img,
@@ -260,67 +212,69 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            box-shadow: none;
         }
 
         #preview-info {
             width: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 24px 32px;
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            background: var(--bg-panel);
+            padding: 20px 24px;
+            border-radius: 6px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
-            box-shadow: var(--card-shadow);
+            gap: 12px;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        #preview-path {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: -8px;
+            margin-bottom: 4px;
+            word-break: break-all;
+            text-align: center;
+            font-family: monospace;
+            opacity: 0.7;
         }
 
         .meta-badges {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .badge {
-            background: rgba(30, 40, 60, 0.4);
-            padding: 6px 14px;
-            border-radius: 20px;
+            background: var(--bg-elevated);
+            padding: 6px 12px;
+            border-radius: 4px;
             font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
+            font-size: 0.8rem;
+            font-weight: 400;
             color: var(--text-secondary);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .badge:hover {
-            transform: translateY(-1px);
-            border-color: rgba(255, 255, 255, 0.15);
+            transition: none;
         }
 
         .badge.highlight {
-            background: rgba(0, 255, 170, 0.15);
-            border-color: var(--accent-teal);
-            color: var(--accent-teal);
-            box-shadow: 0 0 12px rgba(0, 255, 170, 0.2);
+            background: rgba(75, 159, 127, 0.12);
+            border-color: rgba(75, 159, 127, 0.3);
+            color: var(--accent-confirm);
         }
 
         .badge.page-info {
-            background: rgba(0, 102, 255, 0.15);
-            border-color: rgba(0, 212, 255, 0.3);
-            color: var(--accent-cyan);
+            background: rgba(91, 141, 184, 0.12);
+            border-color: rgba(91, 141, 184, 0.3);
+            color: var(--accent-primary);
         }
 
         #preview-filename {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             margin: 0;
             color: var(--text-primary);
             font-weight: 500;
@@ -328,24 +282,23 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.01em;
         }
 
         /* Status Bar */
         #status-bar {
             height: auto;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--bg-panel);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 24px;
-            font-size: 0.875rem;
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 0.8rem;
+            border-radius: 6px;
             flex-shrink: 0;
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--shadow-subtle);
+            margin-top: 20px;
+            color: var(--text-secondary);
         }
 
         .shortcut-list {
@@ -353,53 +306,61 @@
             padding: 0;
             margin: 0;
             overflow-y: auto;
-            max-height: 40%;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 16px;
         }
 
         .shortcut-list::-webkit-scrollbar {
-            width: 6px;
+            width: 4px;
         }
 
         .shortcut-list::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 3px;
+            background: transparent;
         }
 
         .shortcut-list::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+
+        #folder-list {
+            flex: 1;
+            min-height: 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .shortcut-item {
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            background: rgba(30, 40, 60, 0.3);
-            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            background: transparent;
+            border-radius: 4px;
+            font-size: 0.85rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            transition: all 0.12s ease;
             cursor: pointer;
+            color: var(--text-secondary);
         }
 
         .shortcut-item:hover {
-            background: rgba(40, 50, 75, 0.4);
-            border-color: var(--accent-cyan);
-            transform: translateX(4px);
-            box-shadow: 0 0 12px rgba(0, 212, 255, 0.15);
+            background: var(--bg-elevated);
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
         }
 
         .shortcut-key {
-            color: var(--accent-cyan);
-            font-weight: 600;
-            font-size: 0.875rem;
-            padding: 2px 8px;
-            background: rgba(0, 212, 255, 0.1);
-            border-radius: 6px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: var(--accent-primary);
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            background: rgba(91, 141, 184, 0.12);
+            border-radius: 3px;
+            border: 1px solid rgba(91, 141, 184, 0.25);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 2px;
         }
 
         /* History Section */
@@ -408,7 +369,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 16px;
             gap: 12px;
         }
@@ -423,53 +383,42 @@
         }
 
         .history-list::-webkit-scrollbar {
-            width: 6px;
+            width: 4px;
         }
 
         .history-list::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 3px;
+            background: transparent;
         }
 
         .history-list::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
         }
 
         .history-item {
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            background: rgba(30, 40, 60, 0.3);
-            border-radius: 10px;
-            font-size: 0.875rem;
-            border-left: 3px solid #444;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            border-left: 2px solid var(--text-muted);
             display: flex;
             flex-direction: column;
             gap: 6px;
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.12s ease;
         }
 
         .history-item:hover {
-            background: rgba(40, 50, 75, 0.4);
-            transform: translateX(4px);
+            background: #2e313c;
         }
 
         .history-item.move {
-            border-left-color: var(--accent-teal);
-        }
-
-        .history-item.move:hover {
-            box-shadow: 0 0 12px rgba(0, 255, 170, 0.15);
+            border-left-color: var(--accent-confirm);
         }
 
         .history-item.delete {
-            border-left-color: var(--error);
-        }
-
-        .history-item.delete:hover {
-            box-shadow: 0 0 12px rgba(255, 71, 87, 0.15);
+            border-left-color: var(--accent-delete);
         }
 
         .history-top-row {
@@ -479,155 +428,118 @@
         }
 
         .history-link {
-            color: var(--accent-cyan);
+            color: var(--accent-primary);
             text-decoration: none;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 400;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: color 0.2s ease;
+            transition: color 0.12s ease;
         }
 
         .history-link:hover {
-            color: var(--accent-teal);
+            color: var(--text-primary);
         }
 
         .undo-icon {
             cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 4px 6px;
+            border-radius: 3px;
             margin-left: 8px;
-            font-size: 1em;
-            transition: all 0.2s ease;
+            font-size: 0.9em;
+            transition: all 0.12s ease;
             user-select: none;
-            opacity: 0.7;
+            opacity: 0.6;
         }
 
         .undo-icon:hover {
-            background: rgba(0, 212, 255, 0.2);
+            background: var(--bg-base);
             opacity: 1;
-            transform: scale(1.1);
         }
 
         .undo-btn {
-            background: linear-gradient(135deg, rgba(0, 102, 255, 0.2), rgba(0, 212, 255, 0.2));
+            background: var(--bg-elevated);
             color: var(--text-primary);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            padding: 10px 16px;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 14px;
             width: 100%;
             cursor: pointer;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.12s ease;
             font-family: 'Inter', sans-serif;
         }
 
-        .undo-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 102, 255, 0.3), rgba(0, 212, 255, 0.3));
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
-            transform: translateY(-1px);
+        .undo-btn:hover:not(:disabled) {
+            background: #2e313c;
+            border-color: var(--accent-primary);
         }
 
         .undo-btn:disabled {
-            opacity: 0.3;
+            opacity: 0.4;
             cursor: not-allowed;
-            transform: none;
-        }
-
-        .undo-btn:disabled:hover {
-            background: linear-gradient(135deg, rgba(0, 102, 255, 0.2), rgba(0, 212, 255, 0.2));
-            box-shadow: none;
         }
 
         .toast {
             position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, rgba(0, 255, 170, 0.95), rgba(0, 212, 255, 0.95));
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #000;
-            padding: 14px 24px;
-            border-radius: 12px;
+            top: 24px;
+            right: 24px;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 4px;
             opacity: 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.15s ease;
             pointer-events: none;
             z-index: 1000;
-            font-weight: 600;
-            font-size: 0.875rem;
-            box-shadow: 0 8px 32px rgba(0, 255, 170, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            transform: translateY(-10px);
+            font-weight: 500;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-subtle);
+            border: 1px solid var(--border-subtle);
         }
 
         .toast.show {
             opacity: 1;
-            transform: translateY(0);
         }
 
         .toast.error {
-            background: linear-gradient(135deg, rgba(255, 71, 87, 0.95), rgba(255, 100, 100, 0.95));
-            box-shadow: 0 8px 32px rgba(255, 71, 87, 0.4);
+            background: var(--accent-delete);
             color: white;
+            border-color: var(--accent-delete);
         }
 
         /* Typography */
         h2 {
             margin: 0;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
         }
 
         .meta-info {
             font-family: 'Inter', sans-serif;
             color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
         }
 
         /* Page Indicator Pill */
         #page-indicator {
-            background: linear-gradient(135deg, rgba(0, 102, 255, 0.2), rgba(0, 212, 255, 0.2));
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: var(--accent-cyan);
+            background: var(--bg-elevated);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
         }
 
         /* Animations */
-        @keyframes pulse-glow {
-            0%, 100% {
-                box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
-            }
-            50% {
-                box-shadow: 0 0 24px rgba(0, 212, 255, 0.6);
-            }
-        }
-
         .pulse-animation {
-            animation: pulse-glow 1s ease-in-out;
-        }
-
-        @keyframes slide-in {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .slide-in {
-            animation: slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: none;
         }
 
         /* Helper classes */
@@ -642,20 +554,25 @@
         /* Keyboard Hints Section */
         .keyboard-hints {
             margin-top: auto;
-            padding-top: 16px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            opacity: 0.7;
+            padding-top: 12px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            text-align: center;
         }
 
         .keyboard-hints p {
-            margin: 4px 0;
+            margin: 0;
+            white-space: nowrap;
         }
 
         .keyboard-hints strong {
-            color: var(--text-primary);
-            font-weight: 600;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
     </style>
 </head>
@@ -699,7 +616,8 @@
             <div id="grid-view">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span id="page-indicator">Page 1</span>
-                    <span class="meta-info">Press <strong style="color: var(--accent-cyan);">Enter</strong> to preview</span>
+                    <span class="meta-info">Press <strong style="color: var(--accent-cyan);">Enter</strong> to
+                        preview</span>
                 </div>
                 <div id="file-grid" class="file-grid">
                     <!-- Items -->
@@ -714,6 +632,7 @@
                 <!-- Info Below -->
                 <div id="preview-info">
                     <div id="preview-filename">Filename</div>
+                    <div id="preview-path"></div>
                     <div class="meta-badges">
                         <span class="badge page-info" id="preview-page-info">Page 1</span>
                         <span class="badge" id="preview-global-index">#1</span>
@@ -737,6 +656,7 @@
         const state = {
             files: [],
             dirs: [],
+            cwd: '',
             history: [], // { action: 'move'|'delete', filename: 'foo.mp4', from: '.', to: 'Folder', timestamp: Date }
             pageSize: 20,
             currentPage: 0,
@@ -778,6 +698,7 @@
                 const data = await res.json();
                 state.files = data.files;
                 state.dirs = data.dirs;
+                state.cwd = data.cwd;
 
                 // Adjustment if files removed
                 if (state.selectedIndex >= state.files.length) {
@@ -816,11 +737,7 @@
 
             updateStatus(`Moving ${filename}...`);
 
-            // Add pulse animation to media container
-            if (el.mediaContainer) {
-                el.mediaContainer.classList.add('pulse-animation');
-                setTimeout(() => el.mediaContainer.classList.remove('pulse-animation'), 1000);
-            }
+            // Visual feedback removed for minimalist design
 
             try {
                 const res = await fetch('/api/move', {
@@ -862,13 +779,7 @@
 
             updateStatus(`Deleting ${filename}...`);
 
-            // Add pulse animation with red accent
-            if (el.mediaContainer) {
-                el.mediaContainer.style.boxShadow = '0 8px 32px rgba(255, 71, 87, 0.4)';
-                setTimeout(() => {
-                    el.mediaContainer.style.boxShadow = '';
-                }, 800);
-            }
+            // Visual feedback removed for minimalist design
 
             try {
                 const res = await fetch('/api/delete', {
@@ -1049,6 +960,7 @@
             } else {
                 el.previewView.classList.remove('visible');
                 el.previewView.style.display = 'none';
+                unloadMedia(); // Stop playing when exiting preview
                 el.gridView.classList.remove('hidden');
                 renderGrid();
             }
@@ -1070,26 +982,17 @@
                 const icon = isVideo ? '🎬' : '🖼️';
 
                 let thumbnailContent = '';
+                // User requested icons only, no thumbnails/ffmpeg
                 if (isVideo) {
-                    // For videos, create a video element with poster/thumbnail
-                    thumbnailContent = `
-                        <video
-                            src="${f}#t=0.1"
-                            preload="metadata"
-                            muted
-                            style="pointer-events: none;"
-                        ></video>
-                    `;
+                    thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">🎬</div>`;
                 } else if (isImage) {
-                    // For images, show the image directly
-                    thumbnailContent = `<img src="${f}" alt="${f}" loading="lazy">`;
+                    thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">🖼️</div>`;
                 } else {
-                    // Fallback for unknown file types
-                    thumbnailContent = `<div class="icon-fallback">${icon}</div>`;
+                    thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">${icon}</div>`;
                 }
 
                 return `
-                    <div class="file-item ${isSelected ? 'active slide-in' : ''}" onclick="selectItem(${globalIndex})" style="animation-delay: ${i * 0.02}s">
+                    <div class="file-item ${isSelected ? 'active' : ''}" onclick="selectItem(${globalIndex})">
                         <div class="file-thumbnail">
                             ${thumbnailContent}
                         </div>
@@ -1123,6 +1026,8 @@
 
             // Update Info
             el.previewFilename.textContent = filename;
+            const pPath = document.getElementById('preview-path');
+            if (pPath) pPath.textContent = `${state.cwd ? state.cwd + (state.cwd.endsWith('\\') || state.cwd.endsWith('/') ? '' : '\\') : ''}${filename}`;
 
             // Update Badges via DOM lookups
             const pPageInfo = document.getElementById('preview-page-info');
@@ -1144,6 +1049,10 @@
                 mediaEl.muted = state.isMuted;
                 mediaEl.loop = true;
                 mediaEl.src = filename;
+                mediaEl.style.width = "100%";
+                mediaEl.style.height = "100%";
+                mediaEl.style.pointerEvents = "auto"; // Fix for timeline clicking
+                mediaEl.style.zIndex = "10";
             } else {
                 mediaEl = document.createElement('img');
                 mediaEl.src = filename;

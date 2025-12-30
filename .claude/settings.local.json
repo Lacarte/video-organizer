@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd thumbnail previews for images and videos in grid view\n\nEnhanced grid view with actual media thumbnails:\n\nVisual Improvements:\n- Display actual image thumbnails instead of icons\n- Show video thumbnails using first frame \\(t=0.1\\)\n- Lazy loading for better performance\n- Gradient background for thumbnail containers\n- Hover overlay with cyan/blue tint\n- Scale animation on hover \\(1.05x zoom\\)\n\nLayout Changes:\n- Restructured file items with flexbox layout\n- Thumbnail area: 140px height with cover fit\n- File name section with backdrop blur\n- Active item highlights filename with cyan color\n- No padding on item container for clean edges\n\nStyling Details:\n- Icon fallback with glow effect for unsupported types\n- Smooth transitions on all hover states\n- Better contrast for filename labels\n- Pointer-events disabled on video elements to prevent conflicts\n\nThe grid now provides visual preview of content, making it easier\nto identify and organize media files at a glance.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

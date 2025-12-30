@@ -301,18 +301,7 @@ def generate_html(videos: list, output_path: Path) -> str:
             threshold: 0.1
         }};
 
-        const videoObserver = new IntersectionObserver((entries) => {{
-            entries.forEach(entry => {{
-                const video = entry.target;
-                if (entry.isIntersecting) {{
-                    if (video.paused) {{
-                        video.play().catch(() => {{}}); // Ignore autoplay errors
-                    }}
-                }} else {{
-                    video.pause();
-                }}
-            }});
-        }}, observerOptions);
+        // Observer removed in favor of hover-to-play/thumbnails
 
         async function deleteVideo(filename, cardElement, event) {{
             // Prevent clicking the link
@@ -411,7 +400,9 @@ def generate_html(videos: list, output_path: Path) -> str:
                         loop 
                         playsinline 
                         muted
+                        preload="none"
                         class="video-element"
+                        poster="/thumbnails/${{encodeURIComponent(filename)}}.jpg"
                         src="${{encodeURIComponent(filename)}}"
                     ></video>
                     <div class="video-overlay">
@@ -430,7 +421,15 @@ def generate_html(videos: list, output_path: Path) -> str:
                     card.style.border = '1px solid #ff4444';
                 }};
 
-                videoObserver.observe(video);
+                // Hover to play
+                card.addEventListener('mouseenter', () => {{
+                   video.play().catch(() => {{}});
+                }});
+                
+                card.addEventListener('mouseleave', () => {{
+                   video.pause();
+                   video.currentTime = 0; // Reset to start
+                }});
                 fragment.appendChild(card);
             }});
 
