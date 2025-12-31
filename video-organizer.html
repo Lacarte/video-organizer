@@ -667,9 +667,9 @@
             <div class="keyboard-hints">
                 <div class="keyboard-hints-header" onclick="toggleKeyboardHints()">
                     <div class="keyboard-hints-title">Keyboard Shortcuts</div>
-                    <span class="keyboard-hints-toggle">▼</span>
+                    <span class="keyboard-hints-toggle">▶</span>
                 </div>
-                <div class="keyboard-hints-content" id="keyboard-hints-content">
+                <div class="keyboard-hints-content collapsed" id="keyboard-hints-content">
                     <div class="keyboard-hint-row">
                         <span class="keyboard-hint-key">Enter</span>
                         <span class="keyboard-hint-separator">→</span>
@@ -1348,6 +1348,17 @@
                 if (target) {
                     moveFile(target.name);
                 }
+            }
+        }
+
+        function toggleKeyboardHints() {
+            const content = document.getElementById('keyboard-hints-content');
+            const toggle = document.querySelector('.keyboard-hints-toggle');
+            content.classList.toggle('collapsed');
+            if (content.classList.contains('collapsed')) {
+                toggle.textContent = '▶';
+            } else {
+                toggle.textContent = '▼';
             }
         }
 
