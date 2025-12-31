@@ -907,7 +907,10 @@
 
             // Animate Sidebar Target
             const targetLi = document.querySelector(`.shortcut-item[data-target="${targetDir}"]`);
-            if (targetLi) targetLi.classList.add('receiving-folder');
+            if (targetLi) {
+                targetLi.classList.add('receiving-folder');
+                targetLi.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
 
             // Animate Preview Source (Border)
             el.mediaContainer.classList.add('moving-source');
