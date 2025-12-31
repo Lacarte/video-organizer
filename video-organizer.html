@@ -640,6 +640,53 @@
             color: var(--text-secondary);
             flex: 1;
         }
+
+        /* Move Animations */
+        @keyframes pulse-target {
+            0% {
+                box-shadow: 0 0 0 0 rgba(51, 181, 229, 0.4);
+                border-color: rgba(51, 181, 229, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(51, 181, 229, 0);
+                border-color: rgba(51, 181, 229, 1);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(51, 181, 229, 0);
+                border-color: rgba(51, 181, 229, 0.4);
+            }
+        }
+
+        .shortcut-item {
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            /* Prepare for border anim */
+        }
+
+        .receiving-folder {
+            animation: pulse-target 1.5s infinite;
+            background: rgba(51, 181, 229, 0.1) !important;
+            border-color: #33b5e5 !important;
+        }
+
+        .moving-source {
+            position: relative;
+        }
+
+        .moving-source::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 4px solid #33b5e5;
+            animation: pulse-target 1.5s infinite;
+            pointer-events: none;
+            z-index: 100;
+        }
     </style>
 </head>
 
@@ -851,16 +898,31 @@
         async function moveFile(targetDir) {
             if (state.files.length === 0) return;
 
-            // Release lock before network call
-            unloadMedia();
-
             const filename = state.files[state.selectedIndex];
 
-            updateStatus(`Moving ${filename}...`);
+            // 1. Immediate Feedback
+            showToast(`Moving ${filename} to ${targetDir}...`);
+            const mediaEl = el.mediaContainer.querySelector('video, img');
+            if (mediaEl) mediaEl.style.opacity = '0.5';
 
-            // Visual feedback removed for minimalist design
+            // Animate Sidebar Target
+            const targetLi = document.querySelector(`.shortcut-item[data-target="${targetDir}"]`);
+            if (targetLi) targetLi.classList.add('receiving-folder');
+
+            // Animate Preview Source (Border)
+            el.mediaContainer.classList.add('moving-source');
 
             try {
+                // 2. Perform Async Move
+                // Note: We do NOT unload media immediately if we want to keep looking at it or if we move away.
+                // However, Windows might lock the file if it's playing.
+                // Best compromise: Unload if we act on it, but if we navigate away, it's fine.
+                // Actually, for "Moving", we MUST release the lock on Windows if it's the current file.
+                // So checking if it's arguably the current file:
+                if (state.files[state.selectedIndex] === filename) {
+                    unloadMedia();
+                }
+
                 const res = await fetch('/api/move', {
                     method: 'POST',
                     body: JSON.stringify({ filename, target: targetDir })
@@ -869,40 +931,74 @@
 
                 if (result.success) {
                     showToast(`Moved to ${targetDir}`);
-
-                    // Add to history
                     addToHistory('move', filename, '.', targetDir);
 
-                    state.files.splice(state.selectedIndex, 1);
+                    // 3. Safe Re-splicing (Crucial for Async)
+                    // Find where the file is NOW (user might have navigated or deleted others)
+                    const indexNow = state.files.indexOf(filename);
 
-                    if (state.selectedIndex >= state.files.length) {
-                        state.selectedIndex = Math.max(0, state.files.length - 1);
+                    if (indexNow !== -1) {
+                        // Remove file from list
+                        state.files.splice(indexNow, 1);
+
+                        // 4. No-Jump Logic
+                        // If we are currently looking at a file AFTER the one we removed, 
+                        // we must decrement selectedIndex to stay on the SAME file.
+                        // If we were looking AT the file we removed, we stay at same index (which becomes next file).
+
+                        if (state.selectedIndex > indexNow) {
+                            state.selectedIndex--;
+                            // No render needed? We effectively stayed on same visual file.
+                            // But global index changed, so maybe update badges.
+                            renderStatus();
+                        } else if (state.selectedIndex === indexNow) {
+                            // We were on the file that moved.
+                            // Now selectedIndex points to the NEXT file (or out of bounds).
+                            if (state.selectedIndex >= state.files.length) {
+                                state.selectedIndex = Math.max(0, state.files.length - 1);
+                            }
+                            render(); // Full render to show new file
+                        } else {
+                            // We are looking at a file BEFORE the one that moved.
+                            // No index change needed.
+                            renderStatus(); // Just update total count
+                        }
                     }
 
-                    render();
                 } else {
                     showToast("Move failed", true);
-                    render(); // Restore view if failed
+                    if (state.files[state.selectedIndex] === filename) render(); // Restore
                 }
             } catch (e) {
+                console.error(e);
                 showToast("Error moving file", true);
                 render();
+            } finally {
+                if (targetLi) targetLi.classList.remove('receiving-folder');
+                if (mediaEl) mediaEl.style.opacity = '1';
+                el.mediaContainer.classList.remove('moving-source');
             }
         }
 
         async function deleteFile() {
             if (state.files.length === 0) return;
 
-            // Release lock
-            unloadMedia();
-
             const filename = state.files[state.selectedIndex];
 
-            updateStatus(`Deleting ${filename}...`);
+            // 1. Immediate Feedback
+            showToast(`Deleting ${filename}...`);
+            const mediaEl = el.mediaContainer.querySelector('video, img');
+            if (mediaEl) mediaEl.style.opacity = '0.5';
 
-            // Visual feedback removed for minimalist design
+            // Animate Preview Source (Border) - No sidebar target for trash
+            el.mediaContainer.classList.add('moving-source');
 
             try {
+                // 2. Perform Async Delete
+                if (state.files[state.selectedIndex] === filename) {
+                    unloadMedia();
+                }
+
                 const res = await fetch('/api/delete', {
                     method: 'POST',
                     body: JSON.stringify({ filename })
@@ -911,22 +1007,37 @@
 
                 if (result.success) {
                     showToast(`Deleted ${filename}`);
-
-                    // Add to history
                     addToHistory('delete', filename, '.', 'trash');
 
-                    state.files.splice(state.selectedIndex, 1);
-                    if (state.selectedIndex >= state.files.length) {
-                        state.selectedIndex = Math.max(0, state.files.length - 1);
+                    // 3. Safe Re-splicing
+                    const indexNow = state.files.indexOf(filename);
+                    if (indexNow !== -1) {
+                        state.files.splice(indexNow, 1);
+
+                        // 4. No-Jump Logic
+                        if (state.selectedIndex > indexNow) {
+                            state.selectedIndex--;
+                            renderStatus();
+                        } else if (state.selectedIndex === indexNow) {
+                            if (state.selectedIndex >= state.files.length) {
+                                state.selectedIndex = Math.max(0, state.files.length - 1);
+                            }
+                            render();
+                        } else {
+                            renderStatus();
+                        }
                     }
-                    render();
                 } else {
                     showToast("Delete failed", true);
-                    render();
+                    if (state.files[state.selectedIndex] === filename) render();
                 }
             } catch (e) {
+                console.error(e);
                 showToast("Error deleting file", true);
                 render();
+            } finally {
+                if (mediaEl) mediaEl.style.opacity = '1';
+                el.mediaContainer.classList.remove('moving-source');
             }
         }
 
@@ -950,8 +1061,13 @@
             const fullPath = item.to === '.' ? item.filename : `${item.to}/${item.filename}`;
             const target = item.from;
 
+            // 1. Immediate Feedback
             unloadMedia();
             updateStatus(`Undoing ${item.action}...`);
+            showToast(`Moving ${item.filename} back to ${target}...`);
+
+            // Animate Preview (Border)
+            el.mediaContainer.classList.add('moving-source');
 
             try {
                 const res = await fetch('/api/move', {
@@ -969,6 +1085,7 @@
 
                     // Refresh data to show the file back in list
                     await fetchData();
+
                     // Try to finding the restored file and selecting it
                     const newIndex = state.files.indexOf(item.filename);
                     if (newIndex !== -1) {
@@ -981,6 +1098,8 @@
             } catch (e) {
                 console.error(e);
                 showToast("Undo error", true);
+            } finally {
+                el.mediaContainer.classList.remove('moving-source');
             }
         }
 
@@ -1024,7 +1143,7 @@
 
         function renderSidebar() {
             el.folderList.innerHTML = state.dirs.map(d => `
-                <li class="shortcut-item">
+                <li class="shortcut-item" data-target="${d.name}">
                     <span>${d.name}</span>
                     <span class="shortcut-key">${d.shortcut || ''}</span>
                 </li>
