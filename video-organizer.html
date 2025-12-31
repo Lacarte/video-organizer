@@ -1341,8 +1341,8 @@
                 showToast(state.isMuted ? "Muted" : "Unmuted");
             }
 
-            // Folder Shortcuts (A-Z)
-            else if (key.length === 1 && key.match(/[a-z]/i) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            // Folder Shortcuts (A-Z, 0-9)
+            else if (key.length === 1 && key.match(/[a-z0-9]/i) && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 const shortcut = key.toUpperCase();
                 const target = state.dirs.find(d => d.shortcut === shortcut);
                 if (target) {
