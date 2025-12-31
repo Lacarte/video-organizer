@@ -77,18 +77,23 @@ REM Commented out gallery update (as in original)
 echo Updating gallery...
 :: python video_gallery.py
 
-echo CHECKING IF PORT 8001 IS OPEN...
-netstat -ano | find "8001" >nul
-if %errorlevel% equ 0 (
-    echo.
-    echo ========================================================
-    echo  SERVER IS ALREADY RUNNING!
-    echo ========================================================
-    echo.
-    echo Please open your browser to:
-    echo http://localhost:8001/video-organizer.html
-    echo.
-    echo Press any key to exit...
+echo CHECKING FOR EXISTING SERVER ON PORT 8001...
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":8001" ^| find "LISTENING"') do (
+    echo Found running instance with PID: %%a
+    echo Killing process %%a...
+    taskkill /F /PID %%a >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo Process terminated.
+    ) else (
+        echo Failed to kill process. It might have already closed.
+    )
+    timeout /t 1 >nul
+)
+echo.
+echo Starting Server...
+start "" http://localhost:8001/video-organizer.html
+"%SCRIPT_DIR%server.py"
+pause
     pause >nul
 ) else (
     echo Starting local server...

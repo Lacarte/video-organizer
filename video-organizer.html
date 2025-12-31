@@ -1145,9 +1145,20 @@
             const totalPages = Math.ceil(state.files.length / state.pageSize) || 1;
 
             // Update Info
-            el.previewFilename.textContent = filename;
+            const truncateText = (text, maxLength) => {
+                if (!text || text.length <= maxLength) return text;
+                return text.substring(0, maxLength) + '...';
+            };
+
+            el.previewFilename.textContent = truncateText(filename, 90);
+            el.previewFilename.title = filename; // Tooltip for full name
+
             const pPath = document.getElementById('preview-path');
-            if (pPath) pPath.textContent = `${state.cwd ? state.cwd + (state.cwd.endsWith('\\') || state.cwd.endsWith('/') ? '' : '\\') : ''}${filename}`;
+            if (pPath) {
+                const fullPath = `${state.cwd ? state.cwd + (state.cwd.endsWith('\\') || state.cwd.endsWith('/') ? '' : '\\') : ''}${filename}`;
+                pPath.textContent = truncateText(fullPath, 90);
+                pPath.title = fullPath; // Tooltip for full path
+            }
 
             // Update Badges via DOM lookups
             const pPageInfo = document.getElementById('preview-page-info');

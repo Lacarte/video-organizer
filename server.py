@@ -116,6 +116,9 @@ class LimitedFileWrapper:
         self.read_so_far += len(data)
         return data
 
+    def close(self):
+        self.f.close()
+
 class GalleryRequestHandler(RangeHTTPRequestHandler):
     def do_POST(self):
         """Handle JSON API requests."""
