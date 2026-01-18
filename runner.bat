@@ -91,15 +91,8 @@ for /f "tokens=5" %%a in ('netstat -aon ^| find ":8001" ^| find "LISTENING"') do
 )
 echo.
 echo Starting Server...
-start "" http://localhost:8001/video-organizer.html
-"%SCRIPT_DIR%server.py"
-pause
-    pause >nul
-) else (
-    echo Starting local server...
-    start "" "http://localhost:8001/video-organizer.html"
-    python "%SCRIPT_DIR%server.py"
-)
+start "" "http://localhost:8001/video-organizer.html"
+python "%SCRIPT_DIR%server.py"
 
 REM ===================================
 REM Cleanup on Exit
