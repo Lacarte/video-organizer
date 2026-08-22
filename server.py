@@ -17,7 +17,8 @@ SCRIPT_DIR = Path(__file__).parent.resolve()  # Directory where server.py is loc
 # Extensions to look for
 VIDEO_EXT = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
 IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
-MEDIA_EXT = VIDEO_EXT | IMAGE_EXT
+AUDIO_EXT = {'.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.opus'}
+MEDIA_EXT = VIDEO_EXT | IMAGE_EXT | AUDIO_EXT
 
 class RangeHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """

@@ -883,7 +883,7 @@
 
         function unloadMedia() {
             // Important: Clear src to release file lock on Windows
-            const video = el.mediaContainer.querySelector('video');
+            const video = el.mediaContainer.querySelector('video, audio');
             if (video) {
                 video.pause();
                 video.removeAttribute('src'); // or video.src = ""
@@ -902,7 +902,7 @@
 
             // 1. Immediate Feedback
             showToast(`Moving ${filename} to ${targetDir}...`);
-            const mediaEl = el.mediaContainer.querySelector('video, img');
+            const mediaEl = el.mediaContainer.querySelector('video, audio, img');
             if (mediaEl) mediaEl.style.opacity = '0.5';
 
             // Animate Sidebar Target
@@ -990,7 +990,7 @@
 
             // 1. Immediate Feedback
             showToast(`Deleting ${filename}...`);
-            const mediaEl = el.mediaContainer.querySelector('video, img');
+            const mediaEl = el.mediaContainer.querySelector('video, audio, img');
             if (mediaEl) mediaEl.style.opacity = '0.5';
 
             // Animate Preview Source (Border) - No sidebar target for trash
@@ -1116,8 +1116,9 @@
             el.mediaContainer.innerHTML = '';
             const ext = fullPath.split('.').pop().toLowerCase();
             const isVideo = ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext);
+            const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'opus'].includes(ext);
 
-            const mediaEl = createMediaElement(fullPath, isVideo);
+            const mediaEl = createMediaElement(fullPath, isVideo, isAudio);
             el.mediaContainer.appendChild(mediaEl);
 
             // Hijack info
@@ -1221,12 +1222,15 @@
                 const ext = f.split('.').pop().toLowerCase();
                 const isVideo = ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext);
                 const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-                const icon = isVideo ? '🎬' : '🖼️';
+                const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'opus'].includes(ext);
+                const icon = isVideo ? '🎬' : (isAudio ? '🎵' : '🖼️');
 
                 let thumbnailContent = '';
                 // User requested icons only, no thumbnails/ffmpeg
                 if (isVideo) {
                     thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">🎬</div>`;
+                } else if (isAudio) {
+                    thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">🎵</div>`;
                 } else if (isImage) {
                     thumbnailContent = `<div class="icon-fallback" style="font-size: 4em;">🖼️</div>`;
                 } else {
@@ -1259,6 +1263,7 @@
             const filename = state.files[state.selectedIndex];
             const ext = filename.split('.').pop().toLowerCase();
             const isVideo = ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext);
+            const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'opus'].includes(ext);
 
             // Calc Paginated Index
             const pageStart = state.currentPage * state.pageSize;
@@ -1293,11 +1298,11 @@
 
             // Update Media
             el.mediaContainer.innerHTML = '';
-            const mediaEl = createMediaElement(filename, isVideo);
+            const mediaEl = createMediaElement(filename, isVideo, isAudio);
             el.mediaContainer.appendChild(mediaEl);
         }
 
-        function createMediaElement(src, isVideo) {
+        function createMediaElement(src, isVideo, isAudio) {
             let mediaEl;
             if (isVideo) {
                 mediaEl = document.createElement('video');
@@ -1309,6 +1314,17 @@
                 mediaEl.src = src;
                 mediaEl.style.width = "100%";
                 mediaEl.style.height = "100%";
+                mediaEl.style.pointerEvents = "auto";
+                mediaEl.style.zIndex = "10";
+            } else if (isAudio) {
+                mediaEl = document.createElement('audio');
+                mediaEl.controls = true;
+                mediaEl.autoplay = true;
+                mediaEl.muted = state.isMuted;
+                mediaEl.loop = true;
+                mediaEl.preload = "metadata";
+                mediaEl.src = src;
+                mediaEl.style.width = "80%";
                 mediaEl.style.pointerEvents = "auto";
                 mediaEl.style.zIndex = "10";
             } else {
@@ -1366,7 +1382,7 @@
             // Video seek controls (Up/Down arrows) - only in preview mode
             else if (key === 'ArrowUp' && state.inPreview) {
                 e.preventDefault();
-                const video = el.mediaContainer.querySelector('video');
+                const video = el.mediaContainer.querySelector('video, audio');
 
                 if (!video) return;
 
@@ -1402,7 +1418,7 @@
                 }
             } else if (key === 'ArrowDown' && state.inPreview) {
                 e.preventDefault();
-                const video = el.mediaContainer.querySelector('video');
+                const video = el.mediaContainer.querySelector('video, audio');
                 if (video && isFinite(video.duration) && video.duration > 0) {
                     try {
                         const cur = video.currentTime;
@@ -1454,7 +1470,7 @@
             } else if (key === '.') {
                 // Toggle Mute
                 state.isMuted = !state.isMuted;
-                const video = el.mediaContainer.querySelector('video');
+                const video = el.mediaContainer.querySelector('video, audio');
                 if (video) video.muted = state.isMuted;
                 // Update badge if in preview
                 const pMute = document.getElementById('preview-mute-status');
